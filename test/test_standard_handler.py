@@ -1,5 +1,5 @@
 import pytest
-from loguru import logger
+from auto_loguru import logger
 import sys
 
 import logging
