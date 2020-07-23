@@ -34,7 +34,7 @@ def get_module_docstring(filepath):
 
 def setup(app):
     module_name = "autodoc_stub_file.loguru"
-    stub_path = os.path.join("..", "loguru", "__init__.pyi")
+    stub_path = os.path.join("..", "auto_loguru", "__init__.pyi")
     docstring = get_module_docstring(stub_path)
     module = types.ModuleType(module_name, docstring)
     sys.modules[module_name] = module
