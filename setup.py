@@ -24,7 +24,9 @@ setup(
     author="Michael Treanor",
     author_email="skeptycal@gmail.com",
     url="https://github.com/skeptycal/auto_loguru",
-    download_url="https://github.com/skeptycal/auto_loguru/archive/{}.tar.gz".format(version),
+    download_url="https://github.com/skeptycal/auto_loguru/archive/{}.tar.gz".format(
+        version
+    ),
     project_urls={
         "Changelog": "https://github.com/skeptycal/auto_loguru/blob/master/CHANGELOG.rst",
         "Documentation": "https://loguru.readthedocs.io/en/stable/index.html",
@@ -50,7 +52,7 @@ setup(
         "colorama>=0.3.4 ; sys_platform=='win32'",
         "aiocontextvars>=0.2.0 ; python_version<'3.7'",
         "win32-setctime>=1.0.0 ; sys_platform=='win32'",
-        "loguru>=0.5.0"
+        "loguru>=0.5.0",
     ],
     extras_require={
         "dev": [
