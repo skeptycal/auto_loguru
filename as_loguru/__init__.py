@@ -31,7 +31,9 @@
     [3]: https://opensource.org/licenses/MIT
     """
 
-__version__ = '0.1.0'
+
+# import re
+
 
 import atexit as _atexit
 import sys as _sys
@@ -44,6 +46,8 @@ try:
     _debug_
 except NameError:
     _debug_: bool = True
+
+# __version__ = "0.1.0"
 
 # original class init method:
 # _Logger.__init__(self, core, exception, depth, record, lazy, colors, raw, capture, patcher, extra)

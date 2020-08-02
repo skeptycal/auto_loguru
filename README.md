@@ -6,13 +6,13 @@ Simple!
 
 ### Install:
 
-`pip install auto-loguru`
+`pip install as_loguru`
 
 ---
 
 ### Use in Python script:
 
-`from auto-loguru import logger`
+`from as_loguru import logger`
 
 ---
 
