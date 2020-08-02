@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """ AutoSys loguru log wrapper used to set default log level
     of default log.
 
@@ -36,7 +35,10 @@ __version__ = '0.1.0'
 
 import atexit as _atexit
 import sys as _sys
-from loguru import _Logger, _Core
+
+from loguru import _Core
+from loguru import _Logger
+
 
 try:
     _debug_
@@ -47,15 +49,17 @@ except NameError:
 # _Logger.__init__(self, core, exception, depth, record, lazy, colors, raw, capture, patcher, extra)
 
 # TODO - pass in list of handlers instead of just one flag
+
+
 class AutoSysLogger(_Logger):
     """ Extra Features ...
 
         If level is set to "NONE", the logger will still load but no handlers
         will be added. """
 
-    LOGURU_LEVEL: str = ""
-    DEFAULT_PROD_VALUE: str = "SUCCESS"  # for no logging, use NONE
-    DEFAULT_DEV_VALUE: str = "TRACE"
+    LOGURU_LEVEL: str = ''
+    DEFAULT_PROD_VALUE: str = 'SUCCESS'  # for no logging, use NONE
+    DEFAULT_DEV_VALUE: str = 'TRACE'
     LOGGING: bool = False
 
     def __init__(
@@ -88,14 +92,14 @@ class AutoSysLogger(_Logger):
         except:
             self.LOGURU_LEVEL = self.DEFAULT_PROD_VALUE
 
-        if self.LOGURU_LEVEL != "NONE":
+        if self.LOGURU_LEVEL != 'NONE':
             # set LOGGING flag if self.LOGURU_LEVEL is specified
             self.LOGGING = True
 
             from os import environ as _env
 
             # check for environment variable that overrides default value
-            self.LOGURU_LEVEL = _env.get("LOGURU_LEVEL", self.LOGURU_LEVEL)
+            self.LOGURU_LEVEL = _env.get('LOGURU_LEVEL', self.LOGURU_LEVEL)
 
             # remove default handler
             try:
@@ -109,10 +113,10 @@ class AutoSysLogger(_Logger):
             del _env
 
 
-__all__ = ["logger"]
+__all__ = ['logger']
 
 
-logger = AutoSysLogger(
+_logger = AutoSysLogger(
     core=_Core(),
     exception=None,
     depth=0,
@@ -127,7 +131,7 @@ logger = AutoSysLogger(
 )
 
 
-logger.info(f"Logging is on. Severity level set to '{logger.LOGURU_LEVEL}'")
+_logger.info(f"Logging is on. Severity level set to '{logger.LOGURU_LEVEL}'")
 
 # this was the original default handler
 # if _defaults.LOGURU_AUTOINIT and _sys.stderr:
