@@ -1,5 +1,6 @@
 import pytest
-from as_loguru import logger
+from asloguru import logger
+# from loguru import logger
 import sys
 
 import logging
