@@ -32,14 +32,19 @@
     """
 
 
-# import re
-
-
 import atexit as _atexit
 import sys as _sys
+from os import environ as _env
 
 from loguru import _Core
 from loguru import _Logger
+
+from typing import List, Dict
+
+DEFAULT_LEVEL: str = 'INFO'
+
+if 'LOGURU_DEFAULT_LEVEL' in _env:
+    DEFAULT_LEVEL = _env.get('LOGURU_DEFAULT_LEVEL', DEFAULT_LEVEL)
 
 
 try:
@@ -47,10 +52,6 @@ try:
 except NameError:
     _debug_: bool = True
 
-# __version__ = "0.1.0"
-
-# original class init method:
-# _Logger.__init__(self, core, exception, depth, record, lazy, colors, raw, capture, patcher, extra)
 
 # TODO - pass in list of handlers instead of just one flag
 
@@ -68,20 +69,24 @@ class AutoSysLogger(_Logger):
 
     def __init__(
         self,
-        core=_Core(),
-        exception=None,
-        depth=0,
-        record=False,
-        lazy=False,
-        colors=True,
-        raw=False,
-        capture=True,
-        patcher=None,
-        extra={},
-        debug=False,
-        # handlers = {}
+        core: _Core = _Core(),
+        exception: str = None,
+        depth: int = 0,
+        record: bool = False,
+        lazy: bool = False,
+        colors: bool = True,
+        raw: bool = False,
+        capture: bool = True,
+        patcher: str = None,
+        extra: Dict = {},
+        debug: bool = False,
+        level: str = 'TRACE',
+        handlers: Dict = {}
     ):
-        super().__init__(_Core(), None, 0, False, False, False, False, True, None, {})
+        # original class init method:
+        # _Logger.__init__(self, core, exception, depth, record, lazy, colors, raw, capture, patcher, extra)
+        # super().__init__(_Core(), None, 0, False, False, False, False, True, None, {})
+        super().__init__(core, exception, depth, record, lazy, colors, raw, capture, patcher, extra)
         self._autosys_defaults(debug=debug)
 
     def _autosys_defaults(self, debug: bool = False):
@@ -119,6 +124,8 @@ class AutoSysLogger(_Logger):
 
 __all__ = ['logger']
 
+_logger = None
+
 
 _logger = AutoSysLogger(
     core=_Core(),
@@ -137,8 +144,18 @@ _logger = AutoSysLogger(
 
 _logger.info(f"Logging is on. Severity level set to '{logger.LOGURU_LEVEL}'")
 
+
+# ??? from somewhere ... just an idea ...
+def logger():
+    """Returns the logger instance used in this module."""
+    global _logger
+    _logger = _logger or logging.getLogger(__name__)
+    return _logger
+
+
 # this was the original default handler
 # if _defaults.LOGURU_AUTOINIT and _sys.stderr:
 #     logger.add(_sys.stderr)
+
 
 _atexit.register(logger.remove)
