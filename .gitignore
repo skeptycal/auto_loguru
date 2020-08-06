@@ -14,6 +14,7 @@ TODO.md
 **/_templates
 **/.coveragerc
 **/.coveralls.yml
+**/.codecov.yml
 **/.env/
 **/.gitconfig
 **/.gitmodules
@@ -36,7 +37,6 @@ TODO.md
 **/dist/
 **/env/
 **/node_modules/
-**/pyproject.toml
 **/pytest.ini
 **/tox.ini
 **/toxcov.ini

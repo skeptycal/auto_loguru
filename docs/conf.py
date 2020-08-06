@@ -19,8 +19,8 @@ sys.path.insert(0, os.path.abspath('_extensions'))
 # -- Project information -----------------------------------------------------
 
 project = 'loguru'
-copyright = '2018, Delgan'
-author = 'Delgan'
+copyright = '2020, Skeptycal'
+author = 'Skeptycal'
 
 # The short X.Y version
 version = ''
@@ -131,7 +131,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'loguru.tex', 'loguru Documentation', 'Delgan', 'manual'),
+    (master_doc, 'loguru.tex', 'loguru Documentation', 'Skeptycal', 'manual'),
 ]
 
 
@@ -162,7 +162,7 @@ texinfo_documents = [
 
 # -- Extension configuration -------------------------------------------------
 
-html_context = {'github_user': 'delgan', 'github_repo': 'loguru'}
+html_context = {'github_user': 'skeptycal', 'github_repo': 'loguru'}
 
 add_module_names = False
 autodoc_member_order = 'bysource'
