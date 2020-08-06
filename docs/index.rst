@@ -1,4 +1,4 @@
-.. include:: ../README.rst
+.. include:: ../README.md
    :end-before: end-of-readme-intro
 
 Table of contents

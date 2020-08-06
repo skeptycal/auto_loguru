@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('_extensions'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'loguru'
+project = 'AutoSys Loguru'
 copyright = '2020, Skeptycal'
 author = 'Skeptycal'
 
@@ -162,7 +162,7 @@ texinfo_documents = [
 
 # -- Extension configuration -------------------------------------------------
 
-html_context = {'github_user': 'skeptycal', 'github_repo': 'loguru'}
+html_context = {'github_user': 'skeptycal', 'github_repo': 'autosysloguru'}
 
 add_module_names = False
 autodoc_member_order = 'bysource'
