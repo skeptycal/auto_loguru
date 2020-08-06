@@ -10,9 +10,19 @@
 -   Add settings and config options to Template Repo
 -   Reinstalled poetry from custom installer (getting pip corruption on Big Sur install)
 -   Update mypy
-    -   settings in pyproject.toml now
+    -   settings in `pyproject.toml` now
 -   Update isort
-    -   settings in pyproject.toml now
+    -   settings in `pyproject.toml` now
+
+## AS_Loguru 0.4.0
+
+-   `setup.py` is completely inactive in favor of `poetry`/`pyproject.toml`
+-   `bump.py` is the version control script
+-   `setup.sh` is a quick reminder to use `poetry` now
+-   `setup.py` remains with a message to use `poetry`
+-   environment variables `LOGURU_DEFAULT_LEVEL` and `LOGURU_LEVEL` are read as options
+-   `LOGURU_DEFAULT_LEVEL` is used to set a default initial level if none is given
+-   `LOGURU_LEVEL` is used to force an initial actie level
 
 ## AS_Loguru 0.3.0
 
