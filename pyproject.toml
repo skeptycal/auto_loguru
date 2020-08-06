@@ -1,0 +1,65 @@
+[tool.poetry]
+name = "AutoSysLoguru"
+version = "0.4.0"
+description = "Fancy defaults for the awesome loguru logs!"
+license = "MIT"
+readme = "README.md"
+
+authors = ["skeptycal <skeptycal@gmail.com>"]
+maintainers = ['skeptycal <skeptycal@gmail.com >']
+homepage = "https://skeptycal.github.io/auto_loguru"
+repository = "https://github.com/skeptycal/auto_loguru"
+documentation = "https://skeptycal.github.io/auto_loguru"
+
+packages = [{ include = "asloguru" },{ include = "tests", format = "sdist" }]
+keywords = ['macOS', 'setup', 'terminal', 'ci', 'log', 'logging', 'cli', 'logger', 'pyproject', 'toml']
+
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Topic :: System :: Logging',
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: MIT License',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Programming Language :: Python :: Implementation :: PyPy',
+]
+
+[tool.poetry.dependencies]
+python = "^3.6.1"
+colorama = { version="^0.4.3", markers = "sys_platform=='win32'" }
+win32-setctime = { version=">=1.0.0", markers = "sys_platform=='win32'" }
+aiocontextvars = { version = ">=0.2.0", markers = "python_version < '3.7'" }
+pathlib2 = { version = "*", markers = "python_version ~= '2.7' and sys_platform == 'win32'" }
+loguru = "^0.5.1"
+
+[tool.poetry.dev-dependencies]
+# autopep8 = "^1.5.3"
+# black = "^19.10b0"
+covdefaults = "^1.1.0"
+coverage = "^5.2.1"
+# flake8 = "^3.8.3"
+pytest = "^6.0.1"
+pytest-cov = "^2.10.0"
+tox = "^3.18.1"
+tox-travis = "^0.12"
+
+[tool.isort]
+line_length = 88
+force_single_line = true
+atomic = true
+include_trailing_comma = true
+lines_after_imports = 2
+lines_between_types = 1
+multi_line_output = 3
+use_parentheses = true
+not_skip = "__init__.py"
+skip_glob = ["*/setup.py"]
+filter_files = true
+known_third_party = ["pytest"]
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
