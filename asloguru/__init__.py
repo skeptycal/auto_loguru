@@ -38,26 +38,24 @@ import sys as _sys
 from loguru import _Core
 from loguru import _Logger
 
-from arepl_dump import dump
-
-
 from typing import List, Dict
 
 try:
     _debug_ == True
 except NameError:
-    _debug_: bool = True
+    _debug_: bool = False
+
 
 # TODO - pass in list of handlers instead of just one flag
 
 def get_current_logger():
     """ Returns the logger instance used in this module,
         or a new instance if none is available. """
-    global logger
-    logger = logger or AutoSysLogger(debug=_debug_)
+    try:
+        logger = logger or AutoSysLogger(debug=_debug_)
+    except NameError:
+        logger: AutoSysLogger = AutoSysLogger(debug=_debug_)
     return logger
-
-dump()
 class AutoSysLogger(_Logger):
     """ Smoother defaults for the awesome Loguru logger.
 
@@ -74,7 +72,8 @@ class AutoSysLogger(_Logger):
         will be added. """
 
     LOGURU_LEVEL: str = ''
-
+    _DEFAULT_PROD_VALUE: str = 'SUCCESS'
+    _DEFAULT_DEV_VALUE: str = 'TRACE'
     LOGGING: bool = True
 
     def __init__(
@@ -99,59 +98,57 @@ class AutoSysLogger(_Logger):
         super().__init__(core, exception, depth, record, lazy, colors, raw, capture, patcher, extra)
 
         self.debug = debug
-        if level:
-            self.LOGURU_LEVEL = level
         self.handlers = handlers
+        self.LOGURU_LEVEL = level or self._set_level()
 
-        self._autosys_defaults(debug=debug)
+        self._set_default_handler()
 
-    def _autosys_defaults(self, debug: bool = False):
+    def _set_default_handler(self):
+        """ Remove default handler if one is attached
+            Add a new handler based on LOGURU_LEVEL
+            Add handlers passed in 'handlers' variable."""
+        try:
+            self.remove(0)
+        except ValueError:
+            pass
+
+        if self.LOGGING:
+            self.add(_sys.stderr, level=self.LOGURU_LEVEL)
+
+        # for name,handler in self.handlers.items():
+        #     self.add(handler)
+
+    def _set_level(self):
         """ Run once from self.__init__. """
-
+        from os import environ as _env
         if not self.LOGURU_LEVEL:
-            if self.debug:
-                self.LOGURU_LEVEL = self._DEFAULT_DEV_VALUE
-            else:
-                self.LOGURU_LEVEL = self._DEFAULT_PROD_VALUE
-
-
-
-        self.LOGURU_LEVEL = _env.get('LOGURU_LEVEL', self.LOGURU_LEVEL)
+            # if not specified, check environment variable first
+            if 'LOGURU_LEVEL' in _env:
+                self.LOGURU_LEVEL = _env.get('LOGURU_LEVEL', self.LOGURU_LEVEL)
+            else:  # or use environment default
+                if 'LOGURU_DEFAULT_LEVEL' in _env:
+                    self.LOGURU_LEVEL = _env.get('LOGURU_DEFAULT_LEVEL', self.LOGURU_LEVEL)
+                else: # or use hardcoded defaults based on debug boolean flag
+                    if self.debug:
+                        self.LOGURU_LEVEL = self._DEFAULT_DEV_VALUE
+                    else:
+                        self.LOGURU_LEVEL = self._DEFAULT_PROD_VALUE
 
         if self.LOGURU_LEVEL == 'NONE':
             self.LOGGING = False
         else:
             self.LOGGING = True
 
-        # remove default handler
-        try:
-            self.remove(0)
-        except ValueError:
-            pass
-
-        # setup new handler with correct severity
-        if self.LOGGING:
-            self.add(_sys.stderr, level=self.LOGURU_LEVEL)
-            # self.info(f"Logging is on. Severity level set to {self.LOGURU_LEVEL}")
-            del _env
+        del _env
+        return self.LOGURU_LEVEL
 
 
 __all__ = ['logger']
 
-# if not get_current_logger():
-#     logger = AutoSysLogger(
-#         core=_Core(),
-#         exception=None,
-#         depth=0,
-#         record=False,
-#         lazy=False,
-#         colors=True,
-#         raw=False,
-#         capture=True,
-#         patcher=None,
-#         extra={},
-#         debug=_debug_,
-#     )
+try:
+    logger
+except NameError:
+    logger: AutoSysLogger
 
 logger=get_current_logger()
 
