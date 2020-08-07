@@ -11,7 +11,7 @@ homepage = "https://skeptycal.github.io/auto_loguru"
 repository = "https://github.com/skeptycal/auto_loguru"
 documentation = "https://skeptycal.github.io/auto_loguru"
 
-packages = [{ include = "asloguru" },{ include = "tests", format = "sdist" }]
+packages = [{ include = "autosysloguru" },{ include = "tests", format = "sdist" }]
 keywords = ['macOS', 'setup', 'terminal', 'ci', 'log', 'logging', 'cli', 'logger', 'pyproject', 'toml']
 
 classifiers = [
@@ -30,26 +30,24 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.6.1"
-colorama = { version="^0.4.3", markers = "sys_platform=='win32'" }
-win32-setctime = { version=">=1.0.0", markers = "sys_platform=='win32'" }
+colorama = { version = "^0.4.3", markers = "sys_platform=='win32'" }
+win32-setctime = { version = ">=1.0.0", markers = "sys_platform=='win32'" }
 aiocontextvars = { version = ">=0.2.0", markers = "python_version < '3.7'" }
 pathlib2 = { version = "*", markers = "python_version ~= '2.7' and sys_platform == 'win32'" }
 loguru = "^0.5.1"
 
 [tool.poetry.dev-dependencies]
-# autopep8 = "^1.5.3"
-# black = "^19.10b0"
 covdefaults = "^1.1.0"
 coverage = "^5.2.1"
-# flake8 = "^3.8.3"
 pytest = "^6.0.1"
 pytest-cov = "^2.10.0"
 tox = "^3.18.1"
 tox-travis = "^0.12"
+autopep8 = "^1.5.4"
 
 [tool.isort]
 line_length = 88
-force_single_line = true
+force_single_line = false
 atomic = true
 include_trailing_comma = true
 lines_after_imports = 2
@@ -60,6 +58,21 @@ not_skip = "__init__.py"
 skip_glob = ["*/setup.py"]
 filter_files = true
 known_third_party = ["pytest"]
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
+[autosysloguru]
+dev_level = "DEBUG"
+dev_handlers = [
+    {sink= "sys.stdout", colorize = "True", format = "<green>{time}</green> <level>{message}</level>"},
+    {sink = "output.json", serialize = "True"},
+    # Set 'False' to not leak sensitive data in production
+    {sink = "output.log", backtrace = "True", diagnose = "True", rotation = "500 MB"}
+]
+prod_level = "SUCCESS"
+prod_handlers = [
+    {sink = "sys.stdout", colorize = "True", format = "<green>{time}</green> <level>{message}</level>"},
+    {sink = "output.log", rotation = "500 MB", retention = "10 days"}
+]
