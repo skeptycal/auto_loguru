@@ -83,6 +83,9 @@ if True:  # * ################## type definitions
     from typing import Dict, List
 
 
+__version__: str = "0.5.0"
+
+
 # use existing _debug_ else use default
 try:
     _debug_
@@ -103,7 +106,7 @@ class PropagateHandler(Handler):
 
 class AutoSysLevelChangeFilter:
     """
-    # Dynamically change logger level.
+    #### Dynamically change logger level.
 
     ```py
     level_filter = AutoSysLevelChangeFilter("WARNING")
@@ -219,23 +222,26 @@ class AutoSysLogger(_Logger):
         # super().__init__(_Core(), None, 0, False, False, False, False, True, None, {})
         super().__init__(core, exception, depth, record, lazy, colors, raw, capture, patcher, extra)
 
+        # if True, logger will default to DEV mode (insecure, may contain secrets)
         self._debug: bool = debug
+        # if True, logger messages will propagate to stdlib logging module
         self._propagate: bool = propagate
+        # if True, a separate json file is generated
         self._json: bool = json
+        # If True, contains a list of handlers to start with
         self._handlers: List = handlers
-        self._level: int
-        self.level_filter = AutoSysLevelChangeFilter('WARNING')
-        # must be added at handler creation:
-        # logger.add(sys.stderr, filter=level_filter, level=0)
-        # but can be adjusted dynamically:
-        level_filter.level = self.level
-
+        # If True, this is the default starting level for the logger
+        self._level: int = level
         if level:
             self.level(level)
         else:
             _ = self.level
 
-        # if True, logger messages will propagate to stdlib logging module
+        self._level_filter = AutoSysLevelChangeFilter('WARNING')
+        # must be added at handler creation:
+        # logger.add(sys.stderr, filter=level_filter, level=0)
+        # but can be adjusted dynamically:
+        self._level_filter.level = self.level
 
         self._set_default_handler()
 
@@ -305,9 +311,10 @@ class AutoSysLogger(_Logger):
     def propagate(self, value):
 
         if self._propagate:
-            logger.configure(handlers=[{'sink': SocketHandler('localhost', 9999)}])
-            p_handler = {'sink': PropagateHandler(), filter = self.level_filter, format = '{message}'}
-            self.add(PropagateHandler(), format='{message}')
+            p_handler = {'sink': PropagateHandler(), 'filter': self.level_filter,
+                         'format': '{message}'}
+            self.add(p_handler)
+            # self.add(PropagateHandler(), format='{message}')
 
     def _set_default_handler(self):
         """ Remove default (first) handler if one is attached
