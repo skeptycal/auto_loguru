@@ -69,86 +69,33 @@
     [3]: https://opensource.org/licenses/MIT
     """
 
+from __future__ import annotations
 
 import atexit as _atexit
 import sys as _sys
-from sys import stdout, stderr
+
+from _config import (
+    AutoSysLoggerConfig, AutoSysLoggerError,
+    AutoSysLoggerLevelChangeFilter, Highlander,
+    PropagateHandler, env)
 
 from loguru import _Core, _Logger
-from loguru._defaults import env
 
-if True:  # * ################## type definitions
-    from io import TextIOWrapper
-    from logging import Handler
-    from typing import Dict, List
+from typing import Dict, List
 
+
+_debug_: bool = True  # set default value (DEV = True, PROD = False)
 
 __version__: str = "0.5.0"
-
-
-# use existing _debug_ else use default
-try:
-    _debug_
-except NameError:
-    _debug_: bool = True  # set default value (DEV = True, PROD = False)
-
-
-class PropagateHandler(Handler):
-    """ Handler used to pass messages directly from Loguru to the standard library logging module Logger. Just set it and forget it.
-
-    logger = AutoSysLogger(propagate=True)
-    """
-
-    def emit(self, record):
-        import logging
-        logging.getLogger(record.name).handle(record)
-
-
-class AutoSysLevelChangeFilter:
-    """
-    #### Dynamically change logger level.
-
-    ```py
-    level_filter = AutoSysLevelChangeFilter("WARNING")
-    # must be added at handler creation:
-    logger.add(sys.stderr, filter=level_filter, level=0)
-    # but can be adjusted dynamically:
-    level_filter.level = "DEBUG"
-    ```
-
-    from loguru documentation 'recipes'
-    https://loguru.readthedocs.io/en/stable/resources/recipes.html
-    """
-
-    def __init__(self, level):
-        self.level = level
-
-    def __call__(self, record):
-        levelno = logger.level(self.level).no
-        return record['level'].no >= levelno
-
-
-class AutoSysLoggerError(Exception):
-    """ A problem occurred while configuring the logger. """
-
-
-class LoguruConfig:
-    """ Configuration data for AutoSysLoguru """
-
-    def __init__(self, dev_level: str, prod_level: str, dev_handlers: List, prod_handlers: List):
-        self.dev_level = dev_level
-        self.prod_level = prod_level
-        self.dev_handlers = dev_handlers
-        self.prod_handlers = prod_handlers
-        super().__init__()
 
 
 def logger_wraps(*, entry=True, exit=True, level='DEBUG'):
     # https://loguru.readthedocs.io/en/stable/resources/recipes.html
     def wrapper(func):
         name = func.__name__
+        from functools import wraps
 
-        @functools.wraps(func)
+        @wraps(func)
         def wrapped(*args, **kwargs):
             logger_ = logger.opt(depth=1)
             if entry:
@@ -163,6 +110,7 @@ def logger_wraps(*, entry=True, exit=True, level='DEBUG'):
     return wrapper
 
 
+@Highlander
 class AutoSysLogger(_Logger):
     """ Smoother defaults for the awesome Loguru logger.
 
@@ -185,7 +133,7 @@ class AutoSysLogger(_Logger):
     _DEFAULT_PROD_LEVEL: str = 'SUCCESS'
     _DEFAULT_DEV_LEVEL: str = 'TRACE'
     _DEFAULT_DEV_HANDLERS: List = [
-        {'sink': stdout, 'colorize': True,
+        {'sink': _sys.stdout, 'colorize': True,
          'format': '<green>{time}</green> <level>{message}</level>'},
         # 1kb max size forces a new json file for each run
         {'sink': 'output.json', 'serialize': True, 'rotation': '1 KB', 'retention': '10 days'},
@@ -193,9 +141,9 @@ class AutoSysLogger(_Logger):
         {'sink': 'output.log', 'backtrace': True, 'diagnose': True, 'rotation': '500 MB'}
     ]
     _DEFAULT_PROD_HANDLERS: List = [
-        {'sink': stdout, 'colorize': True, 'format': '<green>{time}</green> <level>{message}</level>'},
+        {'sink': _sys.stdout, 'colorize': True, 'format': '<green>{time}</green> <level>{message}</level>'},
         {'sink': 'output.log', 'rotation': '500 MB', 'retention': '10 days'}
-    ],
+    ]
 
     LOGGING: bool = True
 
@@ -211,7 +159,7 @@ class AutoSysLogger(_Logger):
         capture: bool = True,
         patcher: str = None,
         extra: Dict = {},
-        debug: bool = False,
+        debug: bool = _debug_,
         level: str = '',
         propagate: bool = True,
         json: bool = True,
@@ -228,20 +176,19 @@ class AutoSysLogger(_Logger):
         self._propagate: bool = propagate
         # if True, a separate json file is generated
         self._json: bool = json
+
+        self.configsettings: AutoSysLoggerConfig()
         # If True, contains a list of handlers to start with
         self._handlers: List = handlers
         # If True, this is the default starting level for the logger
-        self._level: int = level
+        self._level: str = level
         if level:
-            self.level(level)
+            self.log_level(level)
         else:
-            _ = self.level
+            _ = self.log_level
 
-        self._level_filter = AutoSysLevelChangeFilter('WARNING')
-        # must be added at handler creation:
-        # logger.add(sys.stderr, filter=level_filter, level=0)
-        # but can be adjusted dynamically:
-        self._level_filter.level = self.level
+        self._level_filter = AutoSysLoggerLevelChangeFilter('WARNING')
+        self._level_filter.level = self.log_level
 
         self._set_default_handler()
 
@@ -259,7 +206,6 @@ class AutoSysLogger(_Logger):
         if retention:
             retval['retention'] = retention
         return retval
-        return {'sink': filename, 'serialize': True, 'rotation': rotation, 'retention': retention},
 
     @property
     def username(self):
@@ -272,72 +218,68 @@ class AutoSysLogger(_Logger):
         return self._user
 
     @property
-    def __debug(self):
+    def debug_flag(self):
         if not self._debug:
             self._debug = _debug_
         return self._debug
 
-    @__debug.setter
-    def __debug(self, value: bool):
+    @debug_flag.setter
+    def debug_flag(self, value: bool):
         self._debug = bool(value)
 
     @property
-    def __level(self):
-        if not self._level:
-            from os import environ as _env
-            if 'LOGURU_LEVEL' in _env:
-                self._level = _env.get('LOGURU_LEVEL', self._level)
-            else:  # or use environment default
-                if 'LOGURU_DEFAULT_LEVEL' in _env:
-                    self._level = _env.get('LOGURU_DEFAULT_LEVEL', self._level)
-                else:  # or use hardcoded defaults based on debug boolean flag
-                    if self.debug:
-                        self._level = self._DEFAULT_DEV_LEVEL
-                    else:
-                        self._level = self._DEFAULT_PROD_LEVEL
-            del _env
-            self.LOGGING = self._level != 'NONE'
+    def log_level(self):
+        if not self._level:  # if no parameter, use environment variable setting
+            # def env(key, type_, default=None):
+            self._level = env('LOGURU_LEVEL', '')
+        if not self._level:  # or use hardcoded defaults based on debug boolean flag
+            if self.debug_flag:
+                self._level = self._DEFAULT_DEV_LEVEL
+            else:
+                self._level = self._DEFAULT_PROD_LEVEL
+        self.LOGGING = self._level != 'NONE'
         return self._level
 
-    @__level.setter
-    def __level(self, value):
-        if value in stuff:  # todo - find the loguru list of levels
+    @log_level.setter
+    def log_level(self, value):
+        if value in self._core.levels:
             self._level = value
             self.LOGGING = self._level != 'NONE'
 
     def _level_name(self):
-        self.level(self._level)
+        self.log_level(self._level)
 
     def propagate(self, value):
-
         if self._propagate:
-            p_handler = {'sink': PropagateHandler(), 'filter': self.level_filter,
+            p_handler = {'sink': PropagateHandler(), 'filter': self._level_filter,
                          'format': '{message}'}
             self.add(p_handler)
-            # self.add(PropagateHandler(), format='{message}')
 
     def _set_default_handler(self):
         """ Remove default (first) handler if one is attached
             Add a new handler based on level attribute
             Add handlers passed in 'handlers' variable."""
         try:
-            self.remove(0)
+            # self.remove(0)
+            pass
         except ValueError:
             pass
 
         if self.LOGGING:
-            if not self.handlers:
+            if not self._handlers:
                 # default handler
-                self.add(stderr, filter=self.level_filter, level=self.level)
+                # logger.add(sys.stderr, format="{time} {level} {message}", filter="my_module", level="INFO")
+                pass
+                # todo - some stupid error here ???
+                # todo - ValueError: Tag "<stderr>" does not corespond to any known ansi directive, make sure you did not misspelled it (or prepend '\' to escape it)
+                # self.add(_sys.stderr)
+                self.add(sink=_sys.stderr, filter=self._level_filter, level=self.log_level)
             else:
                 for handler in self.handlers:
-                    self.add(handler, filter=self.level_filter, level=self.level)
+                    self.add(handler, filter=self._level_filter, level=self.log_level)
 
         if self.propagate:
-            s
-
-        # for name,handler in self.handlers.items():
-        #     self.add(handler)
+            pass
 
     def config(self, config=None):
         # todo - all this ...
@@ -348,7 +290,7 @@ class AutoSysLogger(_Logger):
         # read config file next
         # use defaults last
         if not config:
-            if self.debug:
+            if self.debug_flag:
                 # DEV MODE OPTIONS
                 new_handlers = self._DEFAULT_DEV_HANDLERS
                 pass
@@ -365,26 +307,18 @@ class AutoSysLogger(_Logger):
         try:
             self.configure(**config)
         except Exception as e:
-            raise LoggerError(e)
+            raise AutoSysLoggerError(e)
 
 
 __all__ = ['logger']
 
+logger: AutoSysLogger = AutoSysLogger()
 
-# TODO - pass in list of handlers instead of just one flag
+# logger.add(_sys.stderr)
 
-def _get_current_logger():
-    """ Returns the current logger instance if one is running,
-        else a new instance. """
-    try:
-        logger = logger or AutoSysLogger(debug=_debug_)
-    except NameError:
-        logger: AutoSysLogger = AutoSysLogger(debug=_debug_)
-    return logger
-
-
-logger: AutoSysLogger = _get_current_logger()
-
+print(logger.log_level)
+print(logger.debug_flag)
+logger.debug(f'stuff')
 logger.info(f"Logging is on. Severity level set to '{logger.level}'")
 logger.info(f'Current user is {logger.username}')
 
