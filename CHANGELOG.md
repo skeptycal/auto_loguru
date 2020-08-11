@@ -1,4 +1,4 @@
-# AS_Loguru Changelog
+# AutoSysLoguru Changelog
 
 ## UNRELEASED
 
@@ -13,6 +13,19 @@
     -   settings in `pyproject.toml` now
 -   Update isort
     -   settings in `pyproject.toml` now
+-   add pyproject.toml reader/validator
+
+## AutoSysLoguru 0.5.0
+
+-   add configuration options (e.g. environment variables, `pyproject.toml`, config file)
+-   add `pyproject.toml` \[autosysloguru\] section
+-   add configuration examples to `README.md`
+-   Changed module name to avoid underscore (`autosysloguru` instead of `AS_loguru`)
+-   Update `autopep8` (^1.5.3 -> ^1.5.4)
+-   `isort` option changed (`force_single_line = true`)
+-   add future import to module ("`from __future__ import annotations`" is required for Loguru, apparently)
+-   add autosysloguru wrapper tests
+-   reactivate loguru standard tests
 
 ## AS_Loguru 0.4.0
 
