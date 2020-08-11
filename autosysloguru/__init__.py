@@ -74,10 +74,15 @@ from __future__ import annotations
 import atexit as _atexit
 import sys as _sys
 
-from _config import (
+from ._config import (
     AutoSysLoggerConfig, AutoSysLoggerError,
     AutoSysLoggerLevelChangeFilter, Highlander,
     PropagateHandler, env)
+
+from ._exceptions import (
+    AutoSysLoggerError, AutoSysLoggerKeyError,
+    AutoSysLoggerTypeError,
+    AutoSysLoggerValueError,)
 
 from loguru import _Core, _Logger
 
@@ -86,7 +91,7 @@ from typing import Dict, List
 
 _debug_: bool = True  # set default value (DEV = True, PROD = False)
 
-__version__: str = "0.5.0"
+__version__: str = '0.5.0'
 
 
 def logger_wraps(*, entry=True, exit=True, level='DEBUG'):
@@ -129,21 +134,6 @@ class AutoSysLogger(_Logger):
     _user: str = ''
     _level: str = ''
     _propagate: bool = False
-
-    _DEFAULT_PROD_LEVEL: str = 'SUCCESS'
-    _DEFAULT_DEV_LEVEL: str = 'TRACE'
-    _DEFAULT_DEV_HANDLERS: List = [
-        {'sink': _sys.stdout, 'colorize': True,
-         'format': '<green>{time}</green> <level>{message}</level>'},
-        # 1kb max size forces a new json file for each run
-        {'sink': 'output.json', 'serialize': True, 'rotation': '1 KB', 'retention': '10 days'},
-        # Set 'False' to not leak sensitive data in prod
-        {'sink': 'output.log', 'backtrace': True, 'diagnose': True, 'rotation': '500 MB'}
-    ]
-    _DEFAULT_PROD_HANDLERS: List = [
-        {'sink': _sys.stdout, 'colorize': True, 'format': '<green>{time}</green> <level>{message}</level>'},
-        {'sink': 'output.log', 'rotation': '500 MB', 'retention': '10 days'}
-    ]
 
     LOGGING: bool = True
 

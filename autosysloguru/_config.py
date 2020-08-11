@@ -1,16 +1,23 @@
 from logging import Handler
 from os import environ
+from pathlib import Path
+from dataclasses import dataclass
+
+import toml
 
 # from loguru._defaults import env
 from loguru._logger import Level, Logger
 
-from _exceptions import *
+from ._exceptions import (
+    AutoSysLoggerError, AutoSysLoggerKeyError,
+    AutoSysLoggerTypeError,
+    AutoSysLoggerValueError,)
 
 from typing import List, Union
 
 
-__all__ = ["Handler", "env", "Level", "Logger", "AutoSysLoggerConfig",
-           "AutoSysLoggerError", "AutoSysLoggerLevelChangeFilter", "Highlander", "PropagateHandler"]
+__all__ = ['Handler', 'env', 'Level', 'Logger', 'AutoSysLoggerConfig',
+           'AutoSysLoggerError', 'AutoSysLoggerLevelChangeFilter', 'Highlander', 'PropagateHandler']
 
 
 def env(
@@ -48,9 +55,9 @@ def env(
         return val
 
     elif type_ == bool:
-        if val.lower() in {"1", "true", "yes", "y", "ok", "on", "why not"}:
+        if val.lower() in {'1', 'true', 'yes', 'y', 'ok', 'on', 'why not'}:
             return True
-        if val.lower() in {"0", "false", "no", "n", "nok", "off", "no way"}:
+        if val.lower() in {'0', 'false', 'no', 'n', 'nok', 'off', 'no way'}:
             return False
         raise AutoSysLoggerValueError(
             "Invalid environment variable '%s' (expected a boolean): '%s'" % (key, val)
@@ -62,27 +69,6 @@ def env(
         raise AutoSysLoggerValueError(
             "Invalid environment variable '%s' (expected an integer): '%s'" % (key, val)
         ) from None
-
-
-class AutoSysLoggerConfig:
-    """ Configuration data for AutoSysLoguru """
-
-    def __init__(self, debug: bool, dev_level: str, prod_level: str, dev_handlers: List, prod_handlers: List):
-        self.dev_level = dev_level
-        self.prod_level = prod_level
-        self.dev_handlers = dev_handlers
-        self.prod_handlers = prod_handlers
-        self.debug = debug
-
-    def level(self):
-        if self.debug:
-            return self.dev_level
-        return self.prod_level
-
-    def handlers(self):
-        if self.debug:
-            return self.dev_handlers
-        return self.prod_handlers
 
 
 class AutoSysLoggerLevelChangeFilter:
@@ -141,48 +127,80 @@ class PropagateHandler(Handler):
         logging.getLogger(record.name).handle(record)
 
 
-LOGURU_AUTOINIT = env("LOGURU_AUTOINIT", bool, True)
+dataclass
 
-LOGURU_FORMAT = env(
-    "LOGURU_FORMAT",
-    str,
-    "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
-    "<level>{level: <8}</level> | "
-    "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-)
-LOGURU_FILTER = env("LOGURU_FILTER", str, None)
-LOGURU_LEVEL = env("LOGURU_LEVEL", str, "DEBUG")
-LOGURU_COLORIZE = env("LOGURU_COLORIZE", bool, None)
-LOGURU_SERIALIZE = env("LOGURU_SERIALIZE", bool, False)
-LOGURU_BACKTRACE = env("LOGURU_BACKTRACE", bool, True)
-LOGURU_DIAGNOSE = env("LOGURU_DIAGNOSE", bool, True)
-LOGURU_ENQUEUE = env("LOGURU_ENQUEUE", bool, False)
-LOGURU_CATCH = env("LOGURU_CATCH", bool, True)
 
-LOGURU_TRACE_NO = env("LOGURU_TRACE_NO", int, 5)
-LOGURU_TRACE_COLOR = env("LOGURU_TRACE_COLOR", str, "<cyan><bold>")
-LOGURU_TRACE_ICON = env("LOGURU_TRACE_ICON", str, "✏️")  # Pencil
+class AutoSysLoggerConfig:
+    """ Configuration data for AutoSysLoguru """
+    debug_flag: bool
+    DEFAULT_PROD_LEVEL: str = 'SUCCESS'
+    DEFAULT_DEV_LEVEL: str = 'TRACE'
+    DEFAULT_DEV_HANDLERS: List = [
+        {'sink': _sys.stdout, 'colorize': True,
+         'format': '<green>{time}</green> <level>{message}</level>'},
+        # 1kb max size forces a new json file for each run
+        {'sink': 'output.json', 'serialize': True, 'rotation': '1 KB', 'retention': '10 days'},
+        # Set 'False' to not leak sensitive data in prod
+        {'sink': 'output.log', 'backtrace': True, 'diagnose': True, 'rotation': '500 MB'}
+    ]
+    DEFAULT_PROD_HANDLERS: List = [
+        {'sink': _sys.stdout, 'colorize': True,
+         'format': '<green>{time}</green> <level>{message}</level>'},
+        {'sink': 'output.log', 'rotation': '500 MB', 'retention': '10 days'}
+    ]
 
-LOGURU_DEBUG_NO = env("LOGURU_DEBUG_NO", int, 10)
-LOGURU_DEBUG_COLOR = env("LOGURU_DEBUG_COLOR", str, "<blue><bold>")
-LOGURU_DEBUG_ICON = env("LOGURU_DEBUG_ICON", str, "🐞")  # Lady Beetle
+    LOGURU_AUTOINIT = env('LOGURU_AUTOINIT', bool, True)
 
-LOGURU_INFO_NO = env("LOGURU_INFO_NO", int, 20)
-LOGURU_INFO_COLOR = env("LOGURU_INFO_COLOR", str, "<bold>")
-LOGURU_INFO_ICON = env("LOGURU_INFO_ICON", str, "ℹ️")  # Information
+    LOGURU_FORMAT = env(
+        'LOGURU_FORMAT',
+        str,
+        '<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | '
+        '<level>{level: <8}</level> | '
+        '<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>',
+    )
+    LOGURU_FILTER = env('LOGURU_FILTER', str, None)
+    LOGURU_LEVEL = env('LOGURU_LEVEL', str, 'DEBUG')
+    LOGURU_COLORIZE = env('LOGURU_COLORIZE', bool, True)
+    LOGURU_SERIALIZE = env('LOGURU_SERIALIZE', bool, False)
+    LOGURU_BACKTRACE = env('LOGURU_BACKTRACE', bool, True)
+    LOGURU_DIAGNOSE = env('LOGURU_DIAGNOSE', bool, True)
+    LOGURU_ENQUEUE = env('LOGURU_ENQUEUE', bool, False)
+    LOGURU_CATCH = env('LOGURU_CATCH', bool, True)
 
-LOGURU_SUCCESS_NO = env("LOGURU_SUCCESS_NO", int, 25)
-LOGURU_SUCCESS_COLOR = env("LOGURU_SUCCESS_COLOR", str, "<green><bold>")
-LOGURU_SUCCESS_ICON = env("LOGURU_SUCCESS_ICON", str, "✔️")  # Heavy Check Mark
+    LOGURU_TRACE_NO = env('LOGURU_TRACE_NO', int, 5)
+    LOGURU_TRACE_COLOR = env('LOGURU_TRACE_COLOR', str, '<cyan><bold>')
+    LOGURU_TRACE_ICON = env('LOGURU_TRACE_ICON', str, '✏️')  # Pencil
 
-LOGURU_WARNING_NO = env("LOGURU_WARNING_NO", int, 30)
-LOGURU_WARNING_COLOR = env("LOGURU_WARNING_COLOR", str, "<yellow><bold>")
-LOGURU_WARNING_ICON = env("LOGURU_WARNING_ICON", str, "⚠️")  # Warning
+    LOGURU_DEBUG_NO = env('LOGURU_DEBUG_NO', int, 10)
+    LOGURU_DEBUG_COLOR = env('LOGURU_DEBUG_COLOR', str, '<blue><bold>')
+    LOGURU_DEBUG_ICON = env('LOGURU_DEBUG_ICON', str, '🐞')  # Lady Beetle
 
-LOGURU_ERROR_NO = env("LOGURU_ERROR_NO", int, 40)
-LOGURU_ERROR_COLOR = env("LOGURU_ERROR_COLOR", str, "<red><bold>")
-LOGURU_ERROR_ICON = env("LOGURU_ERROR_ICON", str, "❌")  # Cross Mark
+    LOGURU_INFO_NO = env('LOGURU_INFO_NO', int, 20)
+    LOGURU_INFO_COLOR = env('LOGURU_INFO_COLOR', str, '<bold>')
+    LOGURU_INFO_ICON = env('LOGURU_INFO_ICON', str, 'ℹ️')  # Information
 
-LOGURU_CRITICAL_NO = env("LOGURU_CRITICAL_NO", int, 50)
-LOGURU_CRITICAL_COLOR = env("LOGURU_CRITICAL_COLOR", str, "<RED><bold>")
-LOGURU_CRITICAL_ICON = env("LOGURU_CRITICAL_ICON", str, "☠️")  # Skull and Crossbones
+    LOGURU_SUCCESS_NO = env('LOGURU_SUCCESS_NO', int, 25)
+    LOGURU_SUCCESS_COLOR = env('LOGURU_SUCCESS_COLOR', str, '<green><bold>')
+    LOGURU_SUCCESS_ICON = env('LOGURU_SUCCESS_ICON', str, '✔️')  # Heavy Check Mark
+
+    LOGURU_WARNING_NO = env('LOGURU_WARNING_NO', int, 30)
+    LOGURU_WARNING_COLOR = env('LOGURU_WARNING_COLOR', str, '<yellow><bold>')
+    LOGURU_WARNING_ICON = env('LOGURU_WARNING_ICON', str, '⚠️')  # Warning
+
+    LOGURU_ERROR_NO = env('LOGURU_ERROR_NO', int, 40)
+    LOGURU_ERROR_COLOR = env('LOGURU_ERROR_COLOR', str, '<red><bold>')
+    LOGURU_ERROR_ICON = env('LOGURU_ERROR_ICON', str, '❌')  # Cross Mark
+
+    LOGURU_CRITICAL_NO = env('LOGURU_CRITICAL_NO', int, 50)
+    LOGURU_CRITICAL_COLOR = env('LOGURU_CRITICAL_COLOR', str, '<RED><bold>')
+    LOGURU_CRITICAL_ICON = env('LOGURU_CRITICAL_ICON', str, '☠️')  # Skull and Crossbones
+
+    def level(self):
+        if self.debug:
+            return self.dev_level
+        return self.prod_level
+
+    def handlers(self):
+        if self.debug:
+            return self.dev_handlers
+        return self.prod_handlers
