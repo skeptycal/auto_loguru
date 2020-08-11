@@ -30,6 +30,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.6.1"
+dataclasses = { version = "*", markers = "python_version >= '3.6' and python_version < '3.7'" }
 colorama = { version = "^0.4.3", markers = "sys_platform=='win32'" }
 win32-setctime = { version = ">=1.0.0", markers = "sys_platform=='win32'" }
 aiocontextvars = { version = ">=0.2.0", markers = "python_version < '3.7'" }
