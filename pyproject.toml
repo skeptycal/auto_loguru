@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "AutoSysLoguru"
-version = "0.4.0"
+version = "1.5.3"
 description = "Fancy defaults for the awesome loguru logs!"
 license = "MIT"
 readme = "README.md"
