@@ -74,7 +74,7 @@ import atexit as _atexit
 import sys as _sys
 from sys import stdout, stderr
 
-from loguru import _Core, _Logger
+from loguru._logger import Core as _Core, Logger as _Logger
 from loguru._defaults import env
 
 if True:  # * ################## type definitions
@@ -82,12 +82,7 @@ if True:  # * ################## type definitions
     from logging import Handler
     from typing import Dict, List
 
-
-# use existing _debug_ else use default
-try:
-    _debug_
-except NameError:
-    _debug_: bool = True  # set default value (DEV = True, PROD = False)
+_debug_: bool = True
 
 
 class PropagateHandler(Handler):
@@ -102,20 +97,19 @@ class PropagateHandler(Handler):
 
 
 class AutoSysLevelChangeFilter:
-    """
-    # Dynamically change logger level.
+    """ #### Dynamically change logger level.
 
-    ```py
-    level_filter = AutoSysLevelChangeFilter("WARNING")
-    # must be added at handler creation:
-    logger.add(sys.stderr, filter=level_filter, level=0)
-    # but can be adjusted dynamically:
-    level_filter.level = "DEBUG"
-    ```
+        ```py
+        level_filter = AutoSysLevelChangeFilter("WARNING")
+        # must be added at handler creation:
+        logger.add(sys.stderr, filter=level_filter, level=0)
+        # but can be adjusted dynamically:
+        level_filter.level = "DEBUG"
+        ```
 
-    from loguru documentation 'recipes'
-    https://loguru.readthedocs.io/en/stable/resources/recipes.html
-    """
+        from loguru documentation 'recipes'
+        https://loguru.readthedocs.io/en/stable/resources/recipes.html
+        """
 
     def __init__(self, level):
         self.level = level
@@ -143,6 +137,7 @@ class LoguruConfig:
 def logger_wraps(*, entry=True, exit=True, level='DEBUG'):
     # https://loguru.readthedocs.io/en/stable/resources/recipes.html
     def wrapper(func):
+        import functools
         name = func.__name__
 
         @functools.wraps(func)
@@ -176,7 +171,7 @@ class AutoSysLogger(_Logger):
         will be added. """
 
     _user: str = ''
-    _level: str = ''
+    _as_level: str = ''
     _propagate: bool = False
 
     _DEFAULT_PROD_LEVEL: str = 'SUCCESS'
@@ -222,18 +217,13 @@ class AutoSysLogger(_Logger):
         self._debug: bool = debug
         self._propagate: bool = propagate
         self._json: bool = json
-        self._handlers: List = handlers
-        self._level: int
+        self._as_handlers: Dict = handlers
+        self._as_level: int
         self.level_filter = AutoSysLevelChangeFilter('WARNING')
         # must be added at handler creation:
         # logger.add(sys.stderr, filter=level_filter, level=0)
         # but can be adjusted dynamically:
-        level_filter.level = self.level
-
-        if level:
-            self.level(level)
-        else:
-            _ = self.level
+        self.level_filter.level = self.level
 
         # if True, logger messages will propagate to stdlib logging module
 
@@ -277,7 +267,7 @@ class AutoSysLogger(_Logger):
 
     @property
     def __level(self):
-        if not self._level:
+        if not self._as_level:
             from os import environ as _env
             if 'LOGURU_LEVEL' in _env:
                 self._level = _env.get('LOGURU_LEVEL', self._level)
@@ -305,8 +295,21 @@ class AutoSysLogger(_Logger):
     def propagate(self, value):
 
         if self._propagate:
-            logger.configure(handlers=[{'sink': SocketHandler('localhost', 9999)}])
-            p_handler = {'sink': PropagateHandler(), filter = self.level_filter, format = '{message}'}
+            logger.configure(handlers=[
+                {
+                'sink': SocketHandler('localhost', 9999),
+                'filter' : self.level_filter,
+                'format' : '{message}'
+            },
+            {
+                'sink':  PropagateHandler(),
+                'filter' : self.level_filter,
+                'format' : '{message}'
+            }
+            ])
+
+
+            p_handler = {'sink'= PropagateHandler(), filter = self.level_filter, format = '{message}'}
             self.add(PropagateHandler(), format='{message}')
 
     def _set_default_handler(self):
@@ -366,17 +369,8 @@ __all__ = ['logger']
 
 # TODO - pass in list of handlers instead of just one flag
 
-def _get_current_logger():
-    """ Returns the current logger instance if one is running,
-        else a new instance. """
-    try:
-        logger = logger or AutoSysLogger(debug=_debug_)
-    except NameError:
-        logger: AutoSysLogger = AutoSysLogger(debug=_debug_)
-    return logger
 
-
-logger: AutoSysLogger = _get_current_logger()
+logger: AutoSysLogger = AutoSysLogger()
 
 logger.info(f"Logging is on. Severity level set to '{logger.level}'")
 logger.info(f'Current user is {logger.username}')

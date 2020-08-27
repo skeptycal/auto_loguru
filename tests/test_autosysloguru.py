@@ -2,6 +2,7 @@
 """ Tests for the autosysloguru wrapper for Loguru. """
 from __future__ import annotations
 from autosysloguru import logger
+import autosysloguru as loguru
 
 from typing import List, Dict
 
